@@ -1,11 +1,11 @@
--- Local Teleport + ESP UI (Cartoony) [LocalScript]
+-- Local Teleport + ESP + WalkSpeed UI (Cartoony) [LocalScript]
 -- Put in StarterPlayerScripts
 -- Features:
 -- - Teleport tab (click player to teleport)
 -- - ESP tab with toggles (Highlights, NameTags, Health)
--- - Cartoony UI style
--- - Draggable window
--- - Local-only (good for your own testing / admin tools in your game)
+-- - WalkSpeed slider (adjust your speed)
+-- - Draggable window (mouse + touch / phone)
+-- - Local-only (good for testing/admin tools in your own game)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -30,6 +30,8 @@ local COLORS = {
 	Button = Color3.fromRGB(72, 80, 110),
 	ButtonHover = Color3.fromRGB(90, 100, 140),
 	Stroke = Color3.fromRGB(20, 24, 35),
+	SliderTrack = Color3.fromRGB(60, 66, 90),
+	SliderFill = Color3.fromRGB(100, 190, 255),
 }
 
 --========================
@@ -40,6 +42,12 @@ local espEnabled = false
 local espHighlightsEnabled = true
 local espNameTagsEnabled = true
 local espShowHealth = true
+
+-- WalkSpeed settings
+local DEFAULT_WALKSPEED = 16
+local MIN_WALKSPEED = 8
+local MAX_WALKSPEED = 100
+local currentWalkSpeed = DEFAULT_WALKSPEED
 
 local espObjects = {} -- [player] = {highlight = ..., billboard = ..., conn = ...}
 local heartbeatConn
@@ -172,8 +180,8 @@ screenGui.Parent = PlayerGui
 
 local main = Instance.new("Frame")
 main.Name = "Main"
-main.Size = UDim2.new(0, 360, 0, 430)
-main.Position = UDim2.new(0, 18, 0.5, -215)
+main.Size = UDim2.new(0, 380, 0, 500) -- taller for walkspeed
+main.Position = UDim2.new(0, 18, 0.5, -250)
 main.BackgroundColor3 = COLORS.Bg
 main.Parent = screenGui
 addCorner(main, 18)
@@ -218,10 +226,84 @@ content.Parent = main
 addCorner(content, 14)
 addStroke(content, COLORS.Stroke, 2)
 
+--========================
+-- WALK SPEED PANEL (bottom section, visible on all tabs)
+--========================
+local speedPanel = Instance.new("Frame")
+speedPanel.Name = "SpeedPanel"
+speedPanel.Size = UDim2.new(1, -12, 0, 96)
+speedPanel.Position = UDim2.new(0, 6, 1, -102)
+speedPanel.BackgroundColor3 = COLORS.Panel
+speedPanel.Parent = main
+addCorner(speedPanel, 14)
+addStroke(speedPanel, COLORS.Stroke, 2)
+
+local speedTitle = createLabel(speedPanel, "WalkSpeed", UDim2.new(0.5, 0, 0, 24), UDim2.new(0, 12, 0, 6), Enum.Font.GothamBlack, 15, COLORS.SubText, 1)
+local speedValueLabel = createLabel(speedPanel, tostring(currentWalkSpeed), UDim2.new(0, 70, 0, 24), UDim2.new(1, -82, 0, 6), Enum.Font.GothamBlack, 15, COLORS.Text, 1)
+speedValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+
+local sliderHolder = Instance.new("Frame")
+sliderHolder.Name = "SliderHolder"
+sliderHolder.Size = UDim2.new(1, -24, 0, 32)
+sliderHolder.Position = UDim2.new(0, 12, 0, 34)
+sliderHolder.BackgroundTransparency = 1
+sliderHolder.Parent = speedPanel
+
+local sliderTrack = Instance.new("Frame")
+sliderTrack.Name = "Track"
+sliderTrack.Size = UDim2.new(1, 0, 0, 10)
+sliderTrack.Position = UDim2.new(0, 0, 0.5, -5)
+sliderTrack.BackgroundColor3 = COLORS.SliderTrack
+sliderTrack.Parent = sliderHolder
+addCorner(sliderTrack, 999)
+addStroke(sliderTrack, COLORS.Stroke, 1)
+
+local sliderFill = Instance.new("Frame")
+sliderFill.Name = "Fill"
+sliderFill.Size = UDim2.new(0, 0, 1, 0)
+sliderFill.BackgroundColor3 = COLORS.SliderFill
+sliderFill.Parent = sliderTrack
+addCorner(sliderFill, 999)
+
+local sliderKnob = Instance.new("Frame")
+sliderKnob.Name = "Knob"
+sliderKnob.Size = UDim2.new(0, 22, 0, 22)
+sliderKnob.Position = UDim2.new(0, -11, 0.5, -11)
+sliderKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sliderKnob.Parent = sliderHolder
+addCorner(sliderKnob, 999)
+addStroke(sliderKnob, COLORS.Stroke, 2)
+
+local sliderInputBtn = Instance.new("TextButton")
+sliderInputBtn.Name = "InputCatcher"
+sliderInputBtn.Size = UDim2.new(1, 0, 1, 0)
+sliderInputBtn.BackgroundTransparency = 1
+sliderInputBtn.Text = ""
+sliderInputBtn.AutoButtonColor = false
+sliderInputBtn.Parent = sliderHolder
+
+local speedButtonsFrame = Instance.new("Frame")
+speedButtonsFrame.Size = UDim2.new(1, -24, 0, 22)
+speedButtonsFrame.Position = UDim2.new(0, 12, 0, 70)
+speedButtonsFrame.BackgroundTransparency = 1
+speedButtonsFrame.Parent = speedPanel
+
+local resetSpeedBtn = createButton(speedButtonsFrame, "Reset", UDim2.new(0, 70, 1, 0), UDim2.new(0, 0, 0, 0))
+resetSpeedBtn.TextSize = 13
+local minusBtn = createButton(speedButtonsFrame, "-1", UDim2.new(0, 52, 1, 0), UDim2.new(0, 78, 0, 0))
+minusBtn.TextSize = 13
+local plusBtn = createButton(speedButtonsFrame, "+1", UDim2.new(0, 52, 1, 0), UDim2.new(0, 136, 0, 0))
+plusBtn.TextSize = 13
+local plus5Btn = createButton(speedButtonsFrame, "+5", UDim2.new(0, 52, 1, 0), UDim2.new(0, 194, 0, 0))
+plus5Btn.TextSize = 13
+
+local speedRangeLabel = createLabel(speedButtonsFrame, ("Range: %d-%d"):format(MIN_WALKSPEED, MAX_WALKSPEED), UDim2.new(0, 110, 1, 0), UDim2.new(1, -110, 0, 0), Enum.Font.Gotham, 12, Color3.fromRGB(190, 205, 235), 1)
+speedRangeLabel.TextXAlignment = Enum.TextXAlignment.Right
+
 -- Teleport Page
 local teleportPage = Instance.new("Frame")
 teleportPage.Name = "TeleportPage"
-teleportPage.Size = UDim2.new(1, 0, 1, 0)
+teleportPage.Size = UDim2.new(1, 0, 1, -100) -- leave room for speed panel
 teleportPage.BackgroundTransparency = 1
 teleportPage.Parent = content
 
@@ -257,7 +339,7 @@ listPadding.Parent = listFrame
 -- ESP Page
 local espPage = Instance.new("Frame")
 espPage.Name = "ESPPage"
-espPage.Size = UDim2.new(1, 0, 1, 0)
+espPage.Size = UDim2.new(1, 0, 1, -100) -- leave room for speed panel
 espPage.BackgroundTransparency = 1
 espPage.Visible = false
 espPage.Parent = content
@@ -306,16 +388,118 @@ local hint = createLabel(
 hint.TextWrapped = true
 hint.TextYAlignment = Enum.TextYAlignment.Top
 
--- Open/close mini toggle button (when hidden)
+-- Open/close mini button (when minimized)
 local openMini = createButton(screenGui, "UI", UDim2.new(0, 54, 0, 36), UDim2.new(0, 18, 0.5, -18))
 openMini.Visible = false
 openMini.ZIndex = 20
 
 --========================
--- DRAGGABLE WINDOW
+-- WALK SPEED LOGIC
+--========================
+local function clamp(n, a, b)
+	if n < a then return a end
+	if n > b then return b end
+	return n
+end
+
+local function applyWalkSpeed()
+	local char = LocalPlayer.Character
+	if not char then return end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.WalkSpeed = currentWalkSpeed
+	end
+end
+
+local function speedToAlpha(speed)
+	return (speed - MIN_WALKSPEED) / (MAX_WALKSPEED - MIN_WALKSPEED)
+end
+
+local function alphaToSpeed(alpha)
+	local raw = MIN_WALKSPEED + alpha * (MAX_WALKSPEED - MIN_WALKSPEED)
+	return math.floor(raw + 0.5)
+end
+
+local function updateSpeedSliderVisuals()
+	local alpha = speedToAlpha(currentWalkSpeed)
+	alpha = clamp(alpha, 0, 1)
+
+	sliderFill.Size = UDim2.new(alpha, 0, 1, 0)
+	sliderKnob.Position = UDim2.new(alpha, -11, 0.5, -11)
+	speedValueLabel.Text = tostring(currentWalkSpeed)
+end
+
+local function setWalkSpeed(newSpeed)
+	currentWalkSpeed = clamp(math.floor(newSpeed + 0.5), MIN_WALKSPEED, MAX_WALKSPEED)
+	updateSpeedSliderVisuals()
+	applyWalkSpeed()
+end
+
+local function setSpeedFromInputPosition(inputPosX)
+	local trackAbsPos = sliderTrack.AbsolutePosition.X
+	local trackAbsSize = sliderTrack.AbsoluteSize.X
+	if trackAbsSize <= 0 then return end
+
+	local alpha = (inputPosX - trackAbsPos) / trackAbsSize
+	alpha = clamp(alpha, 0, 1)
+	setWalkSpeed(alphaToSpeed(alpha))
+end
+
+local slidingSpeed = false
+
+sliderInputBtn.InputBegan:Connect(function(input)
+	local t = input.UserInputType
+	if t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.Touch then
+		slidingSpeed = true
+		setSpeedFromInputPosition(input.Position.X)
+	end
+end)
+
+sliderInputBtn.InputEnded:Connect(function(input)
+	local t = input.UserInputType
+	if t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.Touch then
+		slidingSpeed = false
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if not slidingSpeed then return end
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		setSpeedFromInputPosition(input.Position.X)
+	end
+end)
+
+resetSpeedBtn.MouseButton1Click:Connect(function()
+	setWalkSpeed(DEFAULT_WALKSPEED)
+end)
+minusBtn.MouseButton1Click:Connect(function()
+	setWalkSpeed(currentWalkSpeed - 1)
+end)
+plusBtn.MouseButton1Click:Connect(function()
+	setWalkSpeed(currentWalkSpeed + 1)
+end)
+plus5Btn.MouseButton1Click:Connect(function()
+	setWalkSpeed(currentWalkSpeed + 5)
+end)
+
+LocalPlayer.CharacterAdded:Connect(function()
+	task.wait(0.2)
+	applyWalkSpeed()
+end)
+
+--========================
+-- DRAGGABLE WINDOW (mouse + touch / phone)
+-- Hold anywhere on the window except interactive controls
 --========================
 local dragging = false
-local dragInput, dragStart, startPos
+local dragInput
+local dragStart
+local startPos
+
+local function isInteractiveGui(obj)
+	if not obj then return false end
+	return obj:IsA("TextButton") or obj:IsA("ImageButton") or obj:IsA("TextBox") or obj:IsA("ScrollingFrame")
+end
 
 local function updateDrag(input)
 	local delta = input.Position - dragStart
@@ -327,28 +511,39 @@ local function updateDrag(input)
 	)
 end
 
-titleBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = main.Position
-
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
+main.InputBegan:Connect(function(input)
+	local t = input.UserInputType
+	if t ~= Enum.UserInputType.MouseButton1 and t ~= Enum.UserInputType.Touch then
+		return
 	end
+
+	-- Don't start dragging if pressing a button/scroll area/etc.
+	local target = input.Target
+	if isInteractiveGui(target) then
+		return
+	end
+
+	dragging = true
+	dragStart = input.Position
+	startPos = main.Position
+	dragInput = input
+
+	input.Changed:Connect(function()
+		if input.UserInputState == Enum.UserInputState.End then
+			dragging = false
+		end
+	end)
 end)
 
-titleBar.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+main.InputChanged:Connect(function(input)
+	local t = input.UserInputType
+	if t == Enum.UserInputType.MouseMovement or t == Enum.UserInputType.Touch then
 		dragInput = input
 	end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
+	if dragging and input == dragInput then
 		updateDrag(input)
 	end
 end)
@@ -446,10 +641,6 @@ local function populateList()
 end
 
 refreshBtn.MouseButton1Click:Connect(populateList)
-Players.PlayerAdded:Connect(populateList)
-Players.PlayerRemoving:Connect(function(plr)
-	populateList()
-end)
 
 listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	listFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 12)
@@ -501,7 +692,7 @@ local function createESPForPlayer(plr)
 	hl.OutlineTransparency = 0
 	hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 	hl.Enabled = false
-	hl.Parent = screenGui -- local-only place is fine
+	hl.Parent = screenGui
 	data.highlight = hl
 
 	-- Billboard NameTag
@@ -533,7 +724,6 @@ local function createESPForPlayer(plr)
 	data.nameText = nameText
 	data.infoText = infoText
 
-	-- If character gets removed
 	data.ancestryConn = character.AncestryChanged:Connect(function(_, parent)
 		if parent == nil then
 			if data.highlight then data.highlight.Enabled = false end
@@ -541,7 +731,6 @@ local function createESPForPlayer(plr)
 		end
 	end)
 
-	-- Rebuild when character respawns
 	data.charConn = plr.CharacterAdded:Connect(function()
 		task.wait(0.25)
 		createESPForPlayer(plr)
@@ -578,14 +767,14 @@ local function updateESP()
 				local alive = hum and hum.Health > 0 and hrp ~= nil and char ~= nil
 
 				if data.highlight then
-					data.highlight.Enabled = espEnabled and espHighlightsEnabled and alive or false
+					data.highlight.Enabled = (espEnabled and espHighlightsEnabled and alive) or false
 					if alive then
 						data.highlight.Adornee = char
 					end
 				end
 
 				if data.billboard then
-					data.billboard.Enabled = espEnabled and espNameTagsEnabled and alive or false
+					data.billboard.Enabled = (espEnabled and espNameTagsEnabled and alive) or false
 					if alive then
 						data.billboard.Adornee = hrp
 					end
@@ -593,12 +782,10 @@ local function updateESP()
 
 				if data.infoText then
 					if alive then
-						local distText = ""
+						local distText = "?"
 						if myHRP then
 							local dist = (myHRP.Position - hrp.Position).Magnitude
 							distText = tostring(math.floor(dist + 0.5)) .. " studs"
-						else
-							distText = "?"
 						end
 
 						if espShowHealth and hum then
@@ -666,10 +853,12 @@ end)
 --========================
 -- INIT
 --========================
+updateSpeedSliderVisuals()
+applyWalkSpeed()
 populateList()
 rebuildESP()
 
--- Optional hotkey to show/hide UI (PC): RightShift
+-- Optional PC hotkey: RightShift = show/hide UI
 UserInputService.InputBegan:Connect(function(input, gpe)
 	if gpe then return end
 	if input.KeyCode == Enum.KeyCode.RightShift then
