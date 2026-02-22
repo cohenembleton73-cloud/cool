@@ -10,6 +10,7 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local isTouchDevice = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -180,8 +181,13 @@ screenGui.Parent = PlayerGui
 
 local main = Instance.new("Frame")
 main.Name = "Main"
-main.Size = UDim2.new(0, 270, 0, 340)
-main.Position = UDim2.new(0, 18, 0.5, -250)
+if isTouchDevice then
+	main.Size = UDim2.new(0, 285, 0, 360)
+	main.Position = UDim2.new(0, 10, 0.5, -180)
+else
+	main.Size = UDim2.new(0, 380, 0, 500)
+	main.Position = UDim2.new(0, 18, 0.5, -250)
+end
 main.BackgroundColor3 = COLORS.Bg
 main.Parent = screenGui
 addCorner(main, 18)
@@ -219,7 +225,11 @@ local espTabBtn = createButton(tabBar, "ESP", UDim2.new(0.5, -6, 1, -8), UDim2.n
 
 local content = Instance.new("Frame")
 content.Name = "Content"
-content.Size = UDim2.new(1, -12, 1, -112)
+if isTouchDevice then
+	content.Size = UDim2.new(1, -12, 1, -106)
+else
+	content.Size = UDim2.new(1, -12, 1, -112)
+end
 content.Position = UDim2.new(0, 6, 0, 106)
 content.BackgroundColor3 = COLORS.PanelDark
 content.Parent = main
@@ -231,8 +241,13 @@ addStroke(content, COLORS.Stroke, 2)
 --========================
 local speedPanel = Instance.new("Frame")
 speedPanel.Name = "SpeedPanel"
-speedPanel.Size = UDim2.new(1, -12, 0, 96)
-speedPanel.Position = UDim2.new(0, 6, 1, -102)
+if isTouchDevice then
+	speedPanel.Size = UDim2.new(1, -12, 0, 82)
+	speedPanel.Position = UDim2.new(0, 6, 1, -88)
+else
+	speedPanel.Size = UDim2.new(1, -12, 0, 96)
+	speedPanel.Position = UDim2.new(0, 6, 1, -102)
+end
 speedPanel.BackgroundColor3 = COLORS.Panel
 speedPanel.Parent = main
 addCorner(speedPanel, 14)
