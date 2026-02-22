@@ -17,7 +17,12 @@ local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Camera = Workspace.CurrentCamera
-
+if not Camera then
+	repeat
+		task.wait()
+		Camera = Workspace.CurrentCamera
+	until Camera
+end
 local isTouchDevice = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
 --==================================================
@@ -423,7 +428,8 @@ local function makeEdgeZone(name, size, pos)
 	z.Name = name
 	z.Size = size
 	z.Position = pos
-	z.BackgroundTransparency = 1 -- invisible
+	z.BackgroundTransparency = 1
+	z.Active = true -- important for touch input on mobile
 	z.Parent = main
 	z.ZIndex = 50
 	table.insert(edgeZones, z)
@@ -493,12 +499,12 @@ local espInfo = createLabel(espPage, "Local only • Player ESP", UDim2.new(1, -
 local espOptions = createPanel(espPage, UDim2.new(1, -12, 1, -58), UDim2.new(0, 6, 0, 46), COLORS.Panel2)
 
 local yEsp = 8
-local espRow1 = createToggleRow(espOptions, yEsp, "Enable ESP", espEnabled, function(v) espEnabled = v end, true) yEsp += 44
-local espRow2 = createToggleRow(espOptions, yEsp, "Highlights", espHighlightsEnabled, function(v) espHighlightsEnabled = v end, true) yEsp += 44
-local espRow3 = createToggleRow(espOptions, yEsp, "Name Tags", espNameTagsEnabled, function(v) espNameTagsEnabled = v end, true) yEsp += 44
-local espRow4 = createToggleRow(espOptions, yEsp, "Show Health", espShowHealth, function(v) espShowHealth = v end, true) yEsp += 44
-local espRow5 = createToggleRow(espOptions, yEsp, "Show Distance", espShowDistance, function(v) espShowDistance = v end, true) yEsp += 44
-local espRow6 = createToggleRow(espOptions, yEsp, "Team Color", espUseTeamColor, function(v) espUseTeamColor = v end, true) yEsp += 44
+local espRow1 = createToggleRow(espOptions, yEsp, "Enable ESP", espEnabled, function(v) espEnabled = v end, true) yEsp + 44
+local espRow2 = createToggleRow(espOptions, yEsp, "Highlights", espHighlightsEnabled, function(v) espHighlightsEnabled = v end, true) yEsp + 44
+local espRow3 = createToggleRow(espOptions, yEsp, "Name Tags", espNameTagsEnabled, function(v) espNameTagsEnabled = v end, true) yEsp + 44
+local espRow4 = createToggleRow(espOptions, yEsp, "Show Health", espShowHealth, function(v) espShowHealth = v end, true) yEsp + 44
+local espRow5 = createToggleRow(espOptions, yEsp, "Show Distance", espShowDistance, function(v) espShowDistance = v end, true) yEsp + 44
+local espRow6 = createToggleRow(espOptions, yEsp, "Team Color", espUseTeamColor, function(v) espUseTeamColor = v end, true) yEsp + 44
 
 local espDistanceSlider = createSliderRow(espOptions, yEsp, "ESP Max Distance", 50, 2000, espMaxDistance, function(v)
 	espMaxDistance = v
@@ -529,7 +535,7 @@ yMove += 74
 local flyToggleRow = createToggleRow(moveOptions, yMove, "Enable Fly", flyEnabled, function(v)
 	flyEnabled = v
 end, true)
-yMove += 44
+yMove + 44
 
 local flySpeedSlider = createSliderRow(moveOptions, yMove, "Fly Speed", MIN_FLYSPEED, MAX_FLYSPEED, flySpeed, function(v)
 	flySpeed = v
