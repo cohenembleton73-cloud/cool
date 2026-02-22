@@ -1,0 +1,89 @@
+-- Local Teleport UI (LocalScript)
+-- Put in StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- UI setup
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TeleportUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 260, 0, 320)
+frame.Position = UDim2.new(0, 20, 0.5, -160)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = "Teleport to Player"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Parent = frame
+
+local listFrame = Instance.new("ScrollingFrame")
+listFrame.Size = UDim2.new(1, -20, 1, -60)
+listFrame.Position = UDim2.new(0, 10, 0, 50)
+listFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+listFrame.BorderSizePixel = 0
+listFrame.ScrollBarThickness = 6
+listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+listFrame.Parent = frame
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 6)
+layout.Parent = listFrame
+
+-- Teleport logic (local only)
+local function teleportToPlayer(targetPlayer)
+	if not targetPlayer or not targetPlayer.Character then return end
+	local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+	local myChar = LocalPlayer.Character
+	if targetHRP and myChar then
+		local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+		if myHRP then
+			myChar:PivotTo(targetHRP.CFrame + Vector3.new(0, 3, 0))
+		end
+	end
+end
+
+local function clearList()
+	for _, child in ipairs(listFrame:GetChildren()) do
+		if child:IsA("TextButton") then
+			child:Destroy()
+		end
+	end
+end
+
+local function populateList()
+	clearList()
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer then
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(1, -8, 0, 32)
+			btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+			btn.Text = plr.Name
+			btn.Font = Enum.Font.Gotham
+			btn.TextSize = 14
+			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			btn.Parent = listFrame
+
+			btn.MouseButton1Click:Connect(function()
+				teleportToPlayer(plr)
+			end)
+		end
+	end
+
+	task.wait()
+	listFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 8)
+end
+
+Players.PlayerAdded:Connect(populateList)
+Players.PlayerRemoving:Connect(populateList)
+
+populateList()
