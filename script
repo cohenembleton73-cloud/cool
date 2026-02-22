@@ -180,7 +180,7 @@ screenGui.Parent = PlayerGui
 
 local main = Instance.new("Frame")
 main.Name = "Main"
-main.Size = UDim2.new(0, 380, 0, 500) -- taller for walkspeed
+main.Size = UDim2.new(0, 270, 0, 340)
 main.Position = UDim2.new(0, 18, 0.5, -250)
 main.BackgroundColor3 = COLORS.Bg
 main.Parent = screenGui
