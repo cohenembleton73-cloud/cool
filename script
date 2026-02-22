@@ -363,11 +363,9 @@ screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
 screenGui.Parent = PlayerGui
 
-local main = Instance.new("Frame")
-main.Name = "Main"
 if isTouchDevice then
-	main.Size = UDim2.new(0, 300, 0, 390)
-	main.Position = UDim2.new(0, 10, 0.5, -195)
+	main.Size = UDim2.new(0, 240, 0, 300)
+	main.Position = UDim2.new(0, 6, 0.5, -150)
 else
 	main.Size = UDim2.new(0, 420, 0, 560)
 	main.Position = UDim2.new(0, 18, 0.5, -280)
